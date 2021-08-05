@@ -18,6 +18,8 @@ class SocketClient(object):
         self.ws.settimeout(10)
         self.ws.connect(self.host)
 
+##        events.quitting += self.on_close
+
 
     def send_with_response(self, payload):
         json_data = json.dumps(payload)
@@ -36,14 +38,13 @@ class SocketClient(object):
     def on_close(self):
         print("closed connection")
         self.ws.close()
-        
+
 
     def send(self, payload):
         start_time = time.time()
         e = None
         try:
             data = self.send_with_response(payload)
-            assert {} is data
             assert 'error' not in data
         except AssertionError as exp:
             e = exp
@@ -63,17 +64,17 @@ class SocketClient(object):
 class WSBehavior(TaskSet):
     @task(1)
     def action(self):
-        data = { 
-            "jsonrpc": "2.0",  
-            "id": 1,  
-            "method": "programSubscribe",  
-            "params": [    
-                "Vote111111111111111111111111111111111111111",    
-                {      
-                    "encoding": "base64",      
-                    "commitment": "finalized"    
-                    
-                }  
+        data = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "programSubscribe",
+            "params": [
+                "Vote111111111111111111111111111111111111111",
+                {
+                    "encoding": "base64",
+                    "commitment": "finalized"
+
+                }
             ]
         }
         self.client.send(data)
