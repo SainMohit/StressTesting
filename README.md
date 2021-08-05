@@ -9,7 +9,6 @@ Step 2: Creation of virtual environment
 
 Step 3: Activate virtual environment
 >> source venv\bin\activate
-
 Step 4: Install python dependencies
 >> pip install -r requirements.txt
 
