@@ -7,6 +7,24 @@ from uuid import uuid4
 from locust import HttpUser, TaskSet, task, events, User
 import websocket
 
+import logging
+
+# Gets or creates a logger
+logger = logging.getLogger(__name__)  
+
+# set log level
+logger.setLevel(logging.INFO)
+
+# define file handler and set formatter
+file_handler = logging.FileHandler('logfile.log')
+formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
+file_handler.setFormatter(formatter)
+
+# add file handler to logger
+logger.addHandler(file_handler)
+
+
+
 
 all_socs = []
 
@@ -27,6 +45,7 @@ class SocketClient(object):
         self.ws = websocket.WebSocket()
         self.ws.settimeout(10)
         self.ws.connect(self.host)
+        logger.info('New Socket Connection Created')
 
 
 
@@ -45,7 +64,7 @@ class SocketClient(object):
         return json_data
 
     def on_close(self):
-        print("closed connection")
+        logger.info('Socket Connection Closed')
         self.ws.close()
 
 
@@ -104,10 +123,10 @@ class WSUser(User):
         all_socs.append(self.client)
 
     def on_start(self):
-        print("New User Spawned")
+        logger.info('New User Spawned')
     
     def on_stop(self):
-        print("Connection closed")
+        logger.info('User Deleted')
         self.client.on_close()
         
         
