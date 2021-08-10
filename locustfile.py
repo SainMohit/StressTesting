@@ -7,6 +7,16 @@ from uuid import uuid4
 from locust import HttpUser, TaskSet, task, events, User
 import websocket
 
+
+all_socs = []
+
+@events.quitting.add_listener
+def on_quit(environment, **kwargs):
+    for socs in all_socs:
+        socs.on_close()
+
+    
+
 class SocketClient(object):
     def __init__(self, host):
         self.host = host
@@ -18,7 +28,6 @@ class SocketClient(object):
         self.ws.settimeout(10)
         self.ws.connect(self.host)
 
-##        events.quitting += self.on_close
 
 
     def send_with_response(self, payload):
@@ -60,7 +69,9 @@ class SocketClient(object):
             events.request_success.fire(request_type='sockjs', name='send',
                                         response_time=elapsed,
                                         response_length=0)
+    
 
+        
 class WSBehavior(TaskSet):
     @task(1)
     def action(self):
@@ -78,6 +89,8 @@ class WSBehavior(TaskSet):
             ]
         }
         self.client.send(data)
+    
+  
 
 class WSUser(User):
     task_set = WSBehavior
@@ -88,3 +101,15 @@ class WSUser(User):
     def __init__(self, *args, **kwargs):
         super(WSUser, self).__init__(*args, **kwargs)
         self.client = SocketClient('ws://%s' % self.host)
+        all_socs.append(self.client)
+
+    def on_start(self):
+        print("New User Spawned")
+    
+    def on_stop(self):
+        print("Connection closed")
+        self.client.on_close()
+        
+        
+        
+
