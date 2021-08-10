@@ -31,7 +31,10 @@ all_socs = []
 @events.quitting.add_listener
 def on_quit(environment, **kwargs):
     for socs in all_socs:
-        socs.on_close()
+        try:
+            socs.on_close()
+        except:
+            pass
 
     
 
@@ -65,7 +68,10 @@ class SocketClient(object):
 
     def on_close(self):
         logger.info('Socket Connection Closed')
-        self.ws.close()
+        try:
+            self.ws.close()
+        except:
+            pass
 
 
     def send(self, payload):
@@ -78,7 +84,10 @@ class SocketClient(object):
             e = exp
         except Exception as exp:
             e = exp
-            self.ws.close()
+            try:
+                self.ws.close()
+            except:
+                pass
             self.connect()
         elapsed = int((time.time() - start_time) * 1000)
         if e:
@@ -109,7 +118,15 @@ class WSBehavior(TaskSet):
         }
         self.client.send(data)
     
-  
+@events.test_stop.add_listener
+def on_test_stop(environment, **kwargs):
+    for socs in all_socs:
+        try:
+            socs.on_close()
+        except:
+            pass
+        
+    logger.info('Task Stopped')  
 
 class WSUser(User):
     task_set = WSBehavior
