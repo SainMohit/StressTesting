@@ -45,6 +45,9 @@ class SocketClient(object):
         self.session_id = uuid4().hex
         self.subs_id = []
         self.connect()
+        self.base_subs_count = 0
+        self.base_subs = 1
+        self.additional_subs = 0
 
     def connect(self):
         self.ws = websocket.WebSocket()
@@ -111,17 +114,19 @@ class TaskSetRPS(TaskSet):
 
     def rps_sleep(self, rps):
         current_time = float(time.time())
-        next_time = self.previous_time  + 1
+        next_time = self.previous_time  +  4
         if current_time > next_time:
             self.previous_time = current_time
             return
 
         self.previous_time = next_time
+        logging.info(next_time - current_time)
         gevent.sleep(next_time - current_time)
 
 class WSBehavior(TaskSetRPS):
     @task(1)
     def action(self):
+        self.rps_sleep(1)
         data = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -138,25 +143,29 @@ class WSBehavior(TaskSetRPS):
         res = self.client.send(data)
         # print(res)
         if 'method' in res:
-            self.client.subs_id.append(res['params']['subscription'])  
-        self.rps_sleep(1)
+            self.client.subs_id.append(res['params']['subscription'])
+            self.client.base_subs_count += 1
+            logger.info(f"sub no {self.client.base_subs_count}")
+        
 
 
 
 @events.test_stop.add_listener
 def on_test_stop(environment, **kwargs):
-    # for sub_id in subs_id:
-    #     data = {"jsonrpc":"2.0", "id":1, "method":"programUnsubscribe", "params":[sub_id]}
-    #     all_socs[0].send(data)
-
-    logger.info('All Subscription droped') 
       
     for socs in all_socs:
         try:
+            for sub_id in socs.subs_id:
+                logger.info(f"sub id {sub_id}")
+                data = {"jsonrpc":"2.0", "id":1, "method":"programUnsubscribe", "params":[subs_id]}
+                socs.send(data)
+                logger.info("unsubscribed")
             socs.on_close()
-        except:
-            pass
+        except Exception as e:
+            logger.error(str(e))
+        
     raise ValueError    
+    logger.info('All Subscription droped') 
     logger.info('Task Stopped')  
 
 class WSUser(User):
